@@ -1,0 +1,31 @@
+name:                wasm-ast
+version:             0.1.0.0
+github:              "githubuser/opti"
+license:             BSD3
+author:              "Author name here"
+maintainer:          "example@example.com"
+copyright:           "2020 Author name here"
+
+extra-source-files:
+- README.md
+
+description:         Please see the README
+
+library:
+  source-dirs: src
+  exposed-modules:
+  - Lang.Wasm.Ast
+  - Lang.Wasm.Data
+  ghc-options:
+  - -fspecialise-aggressively
+  - -fexpose-all-unfoldings
+  dependencies:
+  - base >= 4.7 && < 5
+  - melude
+  - deepseq >=1.2 && <1.5
+  - bytestring >= 0.10 && < 0.11
+  - hashable >= 1.3 && < 1.4
+  - vector >= 0.12 && < 0.13
+  - vector-instances >= 3.4 && < 3.5
+  - containers >= 0.6 && < 0.7
+  - id-containers

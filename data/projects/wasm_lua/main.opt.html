@@ -1,0 +1,80 @@
+<html>
+    <meta charset="utf-8">
+    <head>
+       <script type='text/javascript'>
+        var Module = {
+            postRun: [
+                text_changed
+            ],
+            print: (function() {
+                return function(text) {
+                    //if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+                    //console.log(text);
+					//
+                    //if(text != "emsc")
+                    //    document.getElementById("result").innerHTML += "<br>\n" + text;
+                };
+                })(),
+                printErr: function(text) {
+                if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+                    if (0) { // XXX disabled for safety typeof dump == 'function') {
+                        dump(text + '\n'); // fast, straight to the real console
+                    } else {
+                        console.error(text);
+                    }
+                }
+            };
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', 'main.clean.wasm', true);
+            xhr.responseType = 'arraybuffer';
+            xhr.overrideMimeType("application/javascript");
+            xhr.onload = function() {
+                Module.wasmBinary = xhr.response;
+
+                var script = document.createElement('script');
+                script.src = "main.js";
+                document.body.appendChild(script);
+            };
+            xhr.send(null);
+
+            var timer;
+            function text_changed() {
+                clearTimeout(timer);
+                input = document.getElementById("edit").value;
+                timer = setTimeout(function() {
+                        document.getElementById("result").innerHTML = "";
+						let times = [];
+						for ( let j = 0; j < 1000; j++ ) {
+							let timeStart = Date.now( );
+							for ( let i = 0; i < 100; i++ ) {
+								Module.ccall("run_lua", 'number', ['string'], [input]);
+							}
+							let timeEnd = Date.now( );
+							times.push( timeEnd - timeStart );
+						}
+						console.log( times );
+                    },
+                    750);
+            }
+       </script>
+    </head>
+    <body>
+        <div>
+        <textarea id="edit" style="width: 800px; height: 480px;" onkeyup="text_changed();">
+function fact (n)
+    if n == 0 then
+      return 1
+    else
+      return n * fact(n-1)
+    end
+end
+function hello_lua()
+    print( "Hello Lua!", fact( 20 ) )
+end
+
+hello_lua()</textarea>
+        <div id="result" style="width: 800px; float: right"></div>
+        </div>
+    </body>
+</html>

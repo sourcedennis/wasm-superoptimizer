@@ -1,0 +1,252 @@
+
+module Lang.Wasm.Process.Reconstruct.Single where
+  -- ( reconstructSingle
+  -- ) where
+
+-- import Melude
+-- -- Stdlib imports
+-- import           Control.Monad ( when )
+-- import           Control.Applicative ( (<|>) )
+-- -- Extra stdlib imports
+-- import qualified Data.Vector as Vector
+-- import           Data.Vector ( Vector, (!?) )
+-- import qualified Control.Monad.State as S
+-- import qualified Control.Monad.Reader as R
+-- import qualified Data.IntMap as IntMap
+-- import           Data.IntMap ( IntMap )
+-- import qualified Data.IntSet as IntSet
+-- import           Data.IntSet ( IntSet )
+-- -- Local library imports
+-- import qualified Algorithm.Graph as AG
+-- import           Lang.Wasm.Ast
+--   ( SimpleInstr, LabelIdx (..), InstrCtx (..) )
+-- -- Local imports
+-- import qualified Control.Monad.RSN as RSN
+-- import Lang.Wasm.Process.Structures
+--   -- ( SingleId, SingleGraphFrozen, GraphNode (..), Edge (..), SingleEdge
+--   -- , DropKeep (..) )
+-- import Lang.Wasm.Process.Flow ( graphFlow )
+-- -- import Lang.Wasm.Process.Reconstruct.Instr ( Instr (..), fixLabel )
+-- import Lang.Wasm.Process.Reconstruct.Helpers
+
+
+-- -- | "And now for the tricky bit."
+-- --
+-- -- Extracts the function body instructions from a single process graph.
+-- reconstructSingle :: InstrCtx
+--                   -> (SingleId, SingleGraphFrozen ())
+--                   -> Maybe [Instr]
+-- reconstructSingle ctx (rootI, g) =
+--   -- trace (show g) $
+--   RSN.evalRSN1 (buildFull rootI) (IntSet.empty, IntSet.empty) IntSet.empty
+--   where
+--   -- | Loop entries and jump targets of the graph. loops is a subset of
+--   -- targets, as every loop entry is a jump target.
+--   loops, targets :: IntSet
+--   (loops, targets) =
+--     let flow = IntSet.fromList . map snd . singleGraphFlow g
+--     in (AG.loopEntries flow rootI, AG.multiParentNodes flow rootI)
+  
+--   seqs :: IntMap ([Instr],Visited,SingleId)
+--   seqs = sequences (rootI, g)
+
+--   buildFull :: SingleId -> Builder [Instr]
+--   buildFull i =
+--     do
+--       (xs, out, mAfterI) <- visitNode i
+--       if IntSet.null out && isNothing mAfterI then
+--         return xs
+--       else
+--         RSN.discard
+
+--   visitNode :: SingleId -> Builder ([Instr], OutLabels, Maybe SingleId)
+--   visitNode i =
+--     do
+--       isV <- isVisited i
+--       S.modify (IntSet.insert i) -- mark visited
+--       if isV then -- revisit
+--         do
+--           -- Only valid for loop entries in the encapsulating scope
+--           RSN.discardIf . not =<< isAvailabel i
+--           return ([InstrBr (Left i)], IntSet.singleton i, Nothing)
+--       else
+--         do
+--           -- If @g !? i@ produces `Nothing`, the graph is invalid. This should
+--           -- be a static error. Discard computation branch for now.
+--           node <- RSN.discardNothing (g !? i)
+--           -- vs <- S.get
+--           -- trace ("Visiting " ++ show i ++ " " ++ show node) $ return ()
+--           case node of
+--             GraphTerminal _ ->
+--               return ([InstrReturn], IntSet.empty, Nothing)
+--             GraphForever _ ->
+--               return ([InstrLoop undefined [InstrBr $ Right $ LabelIdx 0], InstrIdkType], IntSet.empty, Nothing)
+--             GraphTrapped _ ->
+--               return ([InstrUnreachable], IntSet.empty, Nothing)
+--             GraphNode _ edge ->
+--               let isLoopEntry = IntSet.member i loops
+--               in
+--               -- trace ("Visiting " ++ show edge) $ return ()
+--               applyIf isLoopEntry (R.local (mapSnd $ IntSet.insert i)) $
+--                 do
+--                   (xs, out, mAfterI) <- visitInstrSeq i edge
+--                   (ys, out2, mAfterI2) <- visitBlock (xs, out, mAfterI)
+--                   let (ys', out3) = wrapLoop i (ys, out2)
+--                   return (ys', out3, mAfterI2)
+
+--   -- | Visits instructions, until an instruction is encountered that is needed
+--   -- by the outer scope.
+--   visitBlock :: ([Instr], OutLabels, Maybe SingleId) -> Builder ([Instr], OutLabels, Maybe SingleId)
+--   visitBlock (xs, out, mAfterI) =
+--     do
+--       -- If `mAfterI` is Nothing, `x` will never naturally move forward.
+--       -- It may still jump out. Select a jump target if Nothing.
+--       -- Can only select targets that are not surely needed by the parent scope
+--       mAfterI' <- maybe (selectNaturalTarget out) return (Just <$> mAfterI)
+      
+--       case mAfterI' of
+--         Just afterI ->
+--           do
+--             let doReturn = return (xs, out, Nothing)
+--                 doGoDeep =
+--                   do
+--                     let (xs',out2) = wrapBlock afterI (xs, out)
+--                     (ys, out3, mAfterI2) <- R.local (mapFst $ IntSet.union out2) (visitNode afterI)
+--                     -- trace ("Go deep " ++ show ys ++ " " ++ show out3 ++ " " ++ show mAfterI2) $ return ()
+--                     visitBlock (xs' ++ ys, IntSet.union out2 out3, mAfterI2)
+
+--             isEndNeededOuter <- isNeeded afterI -- preceding scope needs
+--             -- trace (show isEndNeededOuter) $ return ()
+
+--             if isEndNeededOuter then -- outer scope surely needs it
+--               doReturn
+--             else if IntSet.member afterI targets then -- outer scope may need it
+--               doGoDeep <|> doReturn
+--             else -- outer scope surely won't need it
+--               doGoDeep
+--         Nothing -> return (xs, out, Nothing)
+
+--   -- | Visits a linear instruction sequence. This is mainly an optimization over
+--   -- visiting a single instruction. If an instruction /always/ leads to some
+--   -- sequence, that sequence can be traversed immediately.
+--   visitInstrSeq :: Int -> SingleEdge -> Builder ([Instr], OutLabels, Maybe SingleId)
+--   visitInstrSeq i edge =
+--     case IntMap.lookup i seqs of
+--       Nothing ->
+--         do
+--           (x, outs, mAfterI) <- visitInstr edge
+--           return ([x], outs, mAfterI)
+--       Just (xs, seqNodes, afterI) ->
+--         do
+--           S.modify $ IntSet.union seqNodes
+--           return (xs, IntSet.empty, Just afterI)
+
+--   -- | Visits one or more edges to build a single instruction.
+--   visitInstr :: SingleEdge -> Builder (Instr, OutLabels, Maybe SingleId)
+--   visitInstr (PeInstr x nextI) =
+--     return (InstrSimple x, IntSet.empty, Just nextI)
+--   visitInstr (PeIf (DKKeepAll, ifI) elseI) =
+--     do
+--       isBrIf <- isAvailabel ifI -- It's a conditional jump to a loop. Use `br_if`.
+--       if isBrIf then
+--         visitBrIf ifI elseI
+--       else
+--         visitIfElse ifI elseI <|> visitBrIf ifI elseI
+--   visitInstr (PeIf (DKKeep _ _, ifI) elseI) =
+--     visitBrIf ifI elseI
+--   visitInstr (PeTable _ xs x) =
+--     do
+--       mapM_ (validateJumpTarget . snd) (x:xs)
+--       let out = IntSet.fromList $ map snd (x:xs)
+--       return (InstrBrTable (map (Left . snd) xs) (Left $ snd x), out, Nothing)
+--   visitInstr (PeCall fIdx nextI) =
+--     return (InstrCall fIdx, IntSet.empty, Just nextI)
+--   visitInstr (PeCallIndirect ft nextI) =
+--     return (InstrCallIndirect ft, IntSet.empty, Just nextI)
+--   visitInstr (PeDropMany _ _ nextI) =
+--     return (InstrNop, IntSet.empty, Just nextI)
+  
+--   -- | Visits a `PeIf` node as an if-else block.
+--   visitIfElse :: SingleId -> SingleId -> Builder (Instr, OutLabels, Maybe SingleId)
+--   visitIfElse ifI elseI =
+--     do
+--       -- trace "if-else" $ return ()
+--       (xs, ifOut, mAfterIfI) <- visitNode ifI <|> pure ([], IntSet.empty, Just ifI)
+--       -- If the subsequent node was previously visited, it cannot naturally
+--       -- follow the if-else block.
+--       RSN.discardIf =<< maybe (return False) isVisited mAfterIfI
+--       justM (S.modify . IntSet.insert) mAfterIfI -- mark it visited, temporarily (avoids the else-branch going too deep)
+--       (ys, elseOut, mAfterElseI) <- pure ([], IntSet.empty, Just elseI) <|> visitNode elseI
+--       justM (S.modify . IntSet.delete) mAfterIfI -- undo temporary marking
+--       -- Both branches must naturally transition to the same node
+--       mAfterI <- maybeEq mAfterIfI mAfterElseI
+--       RSN.discardIf =<< maybe (return False) isVisited mAfterElseI
+
+--       let out = IntSet.union ifOut elseOut
+--       case mAfterI of
+--         Nothing -> return (InstrIf undefined xs ys, out, Nothing)
+--         Just afterI ->
+--           let xs' = applyIf (IntSet.member afterI ifOut) (map $ fixLabel afterI) xs
+--               ys' = applyIf (IntSet.member afterI elseOut) (map $ fixLabel afterI) ys
+--           in return (InstrIf undefined xs' ys', IntSet.delete afterI out, Just afterI)
+
+--   -- | Visits a `PeIf` node as a br_if instruction.
+--   visitBrIf :: SingleId -> SingleId -> Builder (Instr, OutLabels, Maybe SingleId)
+--   visitBrIf ifI elseI =
+--     do
+--       -- trace "brif" $ return ()
+--       validateJumpTarget ifI
+--       return (InstrBrIf (Left ifI), IntSet.singleton ifI, Just elseI)
+
+
+-- -- # Helpers #
+
+-- -- | Extracts linear instruction sequences for the graph, where branches are
+-- -- impossible. This is very helpful when reconstructing the AST.
+-- sequences :: (SingleId, SingleGraphFrozen ()) -> IntMap ([Instr],IntSet,SingleId)
+-- sequences (rootI, g) = snd $ S.execState (visitFresh rootI) (IntSet.empty, IntMap.empty)
+--   where
+--   targets :: IntSet
+--   targets =
+--     let flow = IntSet.fromList . map snd . singleGraphFlow g
+--     in AG.multiParentNodes flow rootI
+--   visitFresh :: SingleId -> State (Visited, IntMap ([Instr],IntSet,SingleId)) ()
+--   visitFresh i = visitSeq (i,[],IntSet.empty) i
+--   visitSeq :: (SingleId,[Instr],IntSet) -> SingleId -> State (Visited, IntMap ([Instr],IntSet,SingleId)) ()
+--   visitSeq (startI, acc, path) i =
+--     do
+--       isVisited <- S.gets (IntSet.member i . fst)
+--       S.modify $ mapFst $ IntSet.insert i
+--       if isVisited then
+--         storeSeq (startI, acc, path) i
+--       else
+--         case g !? i of
+--           Nothing -> return () -- Invalid graph. Ignore for now.
+--           Just (GraphTerminal _) -> storeSeq (startI, acc, path) i
+--           Just (GraphForever _) -> storeSeq (startI, acc, path) i
+--           Just (GraphTrapped _) -> storeSeq (startI, acc, path) i
+--           Just (GraphNode _ (PeInstr instr nextI)) ->
+--             if i `IntSet.member` targets then -- it breaks the sequence
+--               storeSeq (startI, acc, path) i >> visitSeq (i, [InstrSimple instr], IntSet.insert i path) nextI
+--             else -- it's a sequnce
+--               visitSeq (startI, InstrSimple instr:acc, IntSet.insert i path) nextI
+--           Just (GraphNode _ (PeIf (_,ifI) elseI)) ->
+--             storeSeq (startI, acc, path) i >> visitFresh ifI >> visitFresh elseI
+--           Just (GraphNode _ (PeTable _ xs x)) ->
+--             storeSeq (startI, acc, path) i >> mapM_ (visitFresh . snd) (x : xs)
+--           Just (GraphNode _ (PeCall fIdx nextI)) ->
+--             if i `IntSet.member` targets then -- it breaks the sequence
+--               storeSeq (startI, acc, path) i >> visitSeq (i, [InstrCall fIdx], IntSet.insert i path) nextI
+--             else -- it's a sequnce
+--               visitSeq (startI, InstrCall fIdx:acc, IntSet.insert i path) nextI
+--           Just (GraphNode _ (PeCallIndirect ft nextI)) ->
+--             if i `IntSet.member` targets then -- it breaks the sequence
+--               storeSeq (startI, acc, path) i >> visitSeq (i, [InstrCallIndirect ft], IntSet.insert i path) nextI
+--             else -- it's a sequnce
+--               visitSeq (startI, InstrCallIndirect ft:acc, IntSet.insert i path) nextI
+--           Just (GraphNode _ (PeDropMany _ _ nextI)) ->
+--             storeSeq (startI, acc, path) i >> visitFresh nextI
+--   storeSeq :: (SingleId,[Instr],IntSet) -> SingleId -> State (Visited, IntMap ([Instr],IntSet,SingleId)) ()
+--   storeSeq (startI,xs,path) endI =
+--     when (length xs > 1)
+--       $ S.modify $ mapSnd $ IntMap.insert startI (reverse xs, path, endI)

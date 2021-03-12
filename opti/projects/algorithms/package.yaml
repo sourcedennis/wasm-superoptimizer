@@ -1,0 +1,31 @@
+name:                algorithms
+version:             0.1.0.0
+license:             BSD3
+author:              "Author name here"
+maintainer:          "example@example.com"
+copyright:           "2020 Author name here"
+
+extra-source-files:
+- README.md
+
+description:         Please see the README
+
+library:
+  source-dirs: src
+  exposed-modules:
+  - Algorithm.Dataflow
+  - Algorithm.Graph
+  - Data.MapUtils
+  ghc-options:
+  - -fspecialise-aggressively
+  - -fexpose-all-unfoldings
+  dependencies:
+  - melude
+  - id-containers
+  - base >= 4.7 && < 5
+  - containers >= 0.6 && < 0.7
+  - mtl >= 2.2 && < 2.3
+  - unordered-containers >= 0.2 && < 0.3
+  - pqueue >= 1.4 && < 1.5
+  - vector >= 0.12 && < 0.13
+  - primitive >= 0.6

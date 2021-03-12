@@ -1,0 +1,25 @@
+# resolver: lts-15.3
+resolver: lts-14.20
+
+packages:
+- .
+- projects/melude
+- projects/algorithms
+- projects/wasm-ast
+- projects/wasm-binary
+- projects/wasm-process
+
+extra-deps:
+- git: https://github.com/IagoAbal/haskell-z3.git
+  commit: 4ff2215c26c3beda97385b4bd356329fd24c2e76
+- git: https://github.com/sourcedennis/haskell-id-containers.git
+  commit: 92f5562b3830fd74031f5f48b3dd49e018b80664
+- git: https://github.com/sourcedennis/haskell-eqrel.git
+  commit: ad4a869670d068d7a589c41c79eb1ca9cad8ac24
+- git: https://github.com/sourcedennis/haskell-sparse-blob.git
+  commit: 7ceca2f6d6a9d9b083ac0c9f7a262e24ec2f582d
+- hashable-1.3.0.0@sha256:4c70f1407881059e93550d3742191254296b2737b793a742bd901348fb3e1fb1,5206
+- data-sword-0.2.0.2@sha256:997c73059441e4fdde7919965b228a373a6a0ce1150edf4985d0bc3f6e7f278d,1457
+nix:
+  enable: true
+  packages: [z3]

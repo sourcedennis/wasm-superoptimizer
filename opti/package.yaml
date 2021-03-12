@@ -1,0 +1,91 @@
+name:                opti
+version:             0.1.0.0
+license:             BSD3
+author:              "Dennis Sprokholt"
+maintainer:          "d.g.sprokholt@students.uu.nl"
+copyright:           "2020 Dennis Sprokholt"
+
+extra-source-files:
+- README.md
+
+description:         Please see the README
+
+dependencies:
+  - base >= 4.7 && < 5
+
+library:
+  source-dirs:   src
+  exposed-modules:
+    - Lang.Wasm.Symbolics
+    - Lang.Wasm.Symbolic.Configuration
+    - Lang.Wasm.Symbolic.Configuration.Propagation
+    - Lang.Wasm.Symbolic.ProgramState
+    - Lang.Wasm.Symbolic.ProgramState.Exec
+    - Lang.Wasm.Superopt.PartialEval
+    - Lang.Wasm.Superopt.MonadSuperopt
+    - Lang.Wasm.Solver
+    - Lang.Wasm.Dataflow.TypeCheck
+    - Lang.Wasm.Dataflow.Liveness
+    - Lang.Wasm.Dataflow
+    - Lang.Wasm.Drive
+    - Lang.Wasm.Synthesis
+    - Lang.Wasm.Optimizations.CleanFuncs
+    - Lang.Wasm.Optimizations.CleanDead
+    - Lang.Wasm.Optimizations.PullDrop
+    - Lang.Wasm.Superopt.GraphOpt
+    - Binding.Z3.Z3Solver
+  dependencies:
+    - melude
+    - algorithms
+    - wasm-ast
+    - wasm-process
+    - deepseq >= 1.2 && <1.5
+    - containers >= 0.6 && < 0.7
+    - mtl >= 2.2 && < 2.3
+    - transformers >= 0.5 && < 0.6
+    - hashable >= 1.3 && < 1.4
+    - unordered-containers >= 0.2 && < 0.3
+    - id-containers
+    - eqrel
+    - vector >= 0.12 && < 0.13
+    - parallel-io >= 0.3 && < 0.4
+    - base-unicode-symbols >= 0.2 && < 0.3
+    - pqueue >= 1.4 && < 1.5
+    - time >= 1.8 && < 1.9
+    - timeit >= 2.0 && < 2.1
+    - z3 # Version by extra-deps commit ID
+    - random >= 1.1 && < 1.2
+    - parallel >= 3.2 && < 3.3
+    - lens >= 4.17.1 && < 4.17.2
+
+
+executables:
+  opti-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    # - -threaded
+    # - -rtsopts
+    # - -with-rtsopts=-N
+    - -O2
+    - -fspecialise-aggressively
+    - -fexpose-all-unfoldings
+    - -funbox-strict-fields
+    - -fmax-pmcheck-iterations=10000000
+    dependencies:
+    - base >= 4.7 && < 5
+    - bytestring >= 0.10 && < 0.11
+    - attoparsec >= 0.13 && < 0.14
+    - mtl >= 2.2 && < 2.3
+    - containers >= 0.6 && < 0.7
+    - vector >= 0.12 && < 0.13
+    - deepseq >= 1.4 && < 1.5
+    - parallel >= 3.2 && < 3.3
+    - opti
+    - melude
+    - algorithms
+    - wasm-ast
+    - wasm-binary
+    - wasm-process
+    - id-containers
+    - lens >= 4.17.1 && < 4.17.2

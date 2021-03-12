@@ -1,0 +1,70 @@
+body {
+  font-family: "Roboto Light";
+}
+
+table {
+  border-collapse: collapse;
+}
+
+table tr td, table tr th {
+  padding-top: 7pt;
+  padding-bottom: 7pt;
+  padding-left: 10pt;
+  padding-right: 10pt;
+}
+
+table tr:nth-child(even) {
+  background: #FFF;
+}
+
+table tr th {
+  background: #7373ee;
+  color: white;
+  padding-right: 20pt;
+  text-align: left;
+}
+
+table tr:nth-child(odd) {
+  background: #DDD;
+}
+
+table tr td.numeric {
+  font-family: monospace;
+  text-align: right;
+  padding-left: 3pt;
+  padding-right: 3pt;
+}
+
+table tr td.numeric.mean {
+  padding-left: 10pt;
+}
+
+table tr td.numeric.deviation {
+  padding-right: 10pt;
+  padding-left: 0pt;
+  width: 35pt;
+}
+
+a {
+  color: #0000EE;
+  text-decoration: none;
+}
+
+button {
+  background-color: #7373ee;
+  color: white;
+  font-family: "Roboto Light";
+  font-size: 110%;
+  border-radius: 8px;
+  border: none;
+  padding-top: 7pt;
+  padding-bottom: 7pt;
+  padding-left: 15pt;
+  padding-right: 15pt;
+  margin-top: 15pt;
+  margin-left: 5pt;
+}
+
+button:disabled {
+  background-color: gray;
+}

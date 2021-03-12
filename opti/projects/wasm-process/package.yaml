@@ -1,0 +1,35 @@
+name:                wasm-process
+version:             0.1.0.0
+github:              "githubuser/wasm-process"
+license:             BSD3
+author:              "Author name here"
+maintainer:          "example@example.com"
+copyright:           "2020 Author name here"
+
+extra-source-files:
+- README.md
+
+description:         Please see the README
+
+dependencies:
+- base >= 4.7 && < 5
+
+library:
+  source-dirs: src
+  exposed-modules:
+  - Lang.Wasm.Process
+  ghc-options:
+  - -fspecialise-aggressively
+  - -fexpose-all-unfoldings
+  dependencies:
+  - melude
+  - algorithms
+  - id-containers
+  - wasm-ast >= 0.1
+  - bytestring >= 0.10 && < 0.11
+  - attoparsec >= 0.13 && < 0.14
+  - vector >= 0.12 && < 0.13
+  - containers >= 0.6 && < 0.7
+  - unordered-containers >= 0.2 && < 0.3
+  - deepseq >= 1.4 && < 1.5
+  - mtl >= 2.2 && < 2.3

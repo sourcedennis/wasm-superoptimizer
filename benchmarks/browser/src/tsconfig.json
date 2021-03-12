@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "module": "esnext",
+    "target": "es6",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "noEmit": false,
+    "baseUrl": "./"
+  },
+  "main": "index.ts"
+}
